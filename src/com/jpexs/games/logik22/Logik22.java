@@ -396,6 +396,7 @@ public class Logik22 extends JFrame {
                             numInExact++;
                             takenSecret[i] = true;
                             takenSelected[j] = true;
+                            break;
                         }
                     }
                 }
