@@ -54,13 +54,13 @@ public class SettingsDialog extends JDialog {
         }
 
         JPanel rowColsPanel = new JPanel(new FlowLayout());
-        JLabel columnsLabel = new JLabel("Columns:");
+        JLabel columnsLabel = new JLabel(Logik22.translate("settings.columns"));
         rowColsPanel.add(columnsLabel);
 
         final JTextField columnsField = new JTextField("" + settings.cols, 2);
         rowColsPanel.add(columnsField);
 
-        JLabel rowsLabel = new JLabel("Rows:");
+        JLabel rowsLabel = new JLabel(Logik22.translate("settings.rows"));
         rowColsPanel.add(rowsLabel);
 
         final JTextField rowsField = new JTextField("" + settings.rows, 2);
@@ -68,7 +68,7 @@ public class SettingsDialog extends JDialog {
 
         container.add(rowColsPanel);
         
-        JLabel colorLabel = new JLabel("Used colors:");
+        JLabel colorLabel = new JLabel(Logik22.translate("settings.colors"));
         colorLabel.setAlignmentX(0.5f);
         container.add(colorLabel);
         
@@ -141,7 +141,7 @@ public class SettingsDialog extends JDialog {
         container.add(colorsPanel);
 
         JPanel panelButtons = new JPanel(new FlowLayout());
-        JButton okButton = new JButton("OK");
+        JButton okButton = new JButton(Logik22.translate("settings.ok"));
         okButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -152,7 +152,7 @@ public class SettingsDialog extends JDialog {
                         throw new NumberFormatException();
                     }
                 } catch (NumberFormatException nfe) {
-                    JOptionPane.showMessageDialog(SettingsDialog.this, "Invalid columns value", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(SettingsDialog.this, Logik22.translate("settings.invalid.columns"), Logik22.translate("settings.error"), JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 try {
@@ -161,12 +161,12 @@ public class SettingsDialog extends JDialog {
                         throw new NumberFormatException();
                     }
                 } catch (NumberFormatException nfe) {
-                    JOptionPane.showMessageDialog(SettingsDialog.this, "Invalid rows value", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(SettingsDialog.this, Logik22.translate("settings.invalid.rows"), Logik22.translate("settings.error"), JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 
                 if(selectedColors.size() < 2) {
-                    JOptionPane.showMessageDialog(SettingsDialog.this, "Invalid selected colors", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(SettingsDialog.this, Logik22.translate("settings.invalid.colors"), Logik22.translate("settings.error"), JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 settings.colors = new Color[selectedColors.size()];
@@ -180,7 +180,7 @@ public class SettingsDialog extends JDialog {
                 setVisible(false);
             }
         });
-        JButton cancelButton = new JButton("Cancel");
+        JButton cancelButton = new JButton(Logik22.translate("settings.cancel"));
         cancelButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -193,7 +193,7 @@ public class SettingsDialog extends JDialog {
         container.add(panelButtons);
         setModal(true);
         pack();
-        setTitle("Settings");
+        setTitle(Logik22.translate("settings.title"));
         Logik22.centerWindow(this);
     }
 

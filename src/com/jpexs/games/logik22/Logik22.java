@@ -18,6 +18,7 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.Random;
+import java.util.ResourceBundle;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -184,10 +185,10 @@ public class Logik22 extends JFrame {
         newGame();
 
         JMenuBar menuBar = new JMenuBar();
-        JMenu gameMenu = new JMenu("Game");
-        JMenuItem newGameMenuItem = new JMenuItem("New game");
-        JMenuItem settingsMenuItem = new JMenuItem("Settings");
-        JMenuItem exitGameMenuItem = new JMenuItem("Exit game");
+        JMenu gameMenu = new JMenu(translate("menu_game"));
+        JMenuItem newGameMenuItem = new JMenuItem(translate("menu_game_new"));
+        JMenuItem settingsMenuItem = new JMenuItem(translate("menu_game_settings"));
+        JMenuItem exitGameMenuItem = new JMenuItem(translate("menu_game_exit"));
 
         newGameMenuItem.addActionListener(new ActionListener() {
             @Override
@@ -285,7 +286,7 @@ public class Logik22 extends JFrame {
         getContentPane().add(scrollPane);
         pack();
         //setResizable(false);        
-        setTitle("Logik 2022");
+        setTitle(translate("title"));
     }
 
     private int getColorOutX(int i) {
@@ -382,12 +383,12 @@ public class Logik22 extends JFrame {
     }
 
     private void winGame() {
-        JOptionPane.showMessageDialog(this, "Congratulation, you won!", "Win", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(this, translate("game.win.message"), translate("game.win.title"), JOptionPane.INFORMATION_MESSAGE);
         gamePaused = true;
     }
 
     private void gameOver() {
-        JOptionPane.showMessageDialog(this, "Game over!", "Fail", JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(this, translate("game.lose.message"), translate("game.lose.title"), JOptionPane.ERROR_MESSAGE);
         gamePaused = true;
     }
 
@@ -499,4 +500,9 @@ public class Logik22 extends JFrame {
         return colorOutDeskImage;
     }
 
+    
+    public static String translate(String key){
+        ResourceBundle mybundle = ResourceBundle.getBundle(Logik22.class.getName());
+        return mybundle.getString(key);
+    }
 }
