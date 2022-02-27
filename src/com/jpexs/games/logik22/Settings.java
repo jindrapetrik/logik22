@@ -1,12 +1,13 @@
 package com.jpexs.games.logik22;
 
 import java.awt.Color;
+import java.io.Serializable;
 
 /**
  *
  * @author JPEXS
  */
-public class Settings {
+public class Settings implements Serializable {
     public int rows = 10;
     public int cols = 5;
     

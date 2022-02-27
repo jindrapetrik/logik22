@@ -16,7 +16,15 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Random;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -37,6 +45,8 @@ import javax.swing.UnsupportedLookAndFeelException;
  * @author JPEXS
  */
 public class Logik22 extends JFrame {
+
+    private static final String CONFIG_NAME = "config.bin";
 
     private BufferedImage defaultRowImage;
     private BufferedImage rowImage;
@@ -78,15 +88,15 @@ public class Logik22 extends JFrame {
 
     private final boolean DEBUG_SHOW_SECRET = false;
 
-    public static  final int HOLE_WIDTH = 30;
+    public static final int HOLE_WIDTH = 30;
 
     public static final int FIRST_HOLE_LEFT = 30;
 
-    public static  final int SMALL_HOLE_WIDTH = 15;
+    public static final int SMALL_HOLE_WIDTH = 15;
 
-    public static  final int SMALL_HOLE_LEFT = 12;
+    public static final int SMALL_HOLE_LEFT = 12;
 
-    public static  final int SMALL_HOLE_RIGHT = 32;
+    public static final int SMALL_HOLE_RIGHT = 32;
 
     private final int MATCHES_LEFT = 3;
 
@@ -98,6 +108,8 @@ public class Logik22 extends JFrame {
 
     public Logik22() {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
+        
+        loadConfig();
 
         try {
             defaultRowImage = ImageIO.read(getClass().getResource(RESOURCE_PATH + "/row.png"));
@@ -108,7 +120,7 @@ public class Logik22 extends JFrame {
             inexactMatchImage = ImageIO.read(getClass().getResource(RESOURCE_PATH + "/white.png"));
 
             setIconImage(ImageIO.read(getClass().getResource(RESOURCE_PATH + "/icon.png")));
-            
+
         } catch (IOException ex) {
             System.err.println("Cannot load image from resources");
             System.exit(1);
@@ -171,13 +183,12 @@ public class Logik22 extends JFrame {
                 }
 
                 g.setFont(g.getFont().deriveFont(20f));
-                g.drawString(translate("game.pick_color"), FIRST_HOLE_LEFT + HOLE_WIDTH * settings.cols + SMALL_HOLE_LEFT + SMALL_HOLE_WIDTH*settings.cols + SMALL_HOLE_RIGHT + 70, 110);
-                
-                g.setFont(g.getFont().deriveFont(15f));                
-                g.drawString(translate("game.legend.black_pin"), FIRST_HOLE_LEFT + HOLE_WIDTH * settings.cols + SMALL_HOLE_LEFT + SMALL_HOLE_WIDTH*settings.cols + SMALL_HOLE_RIGHT + 10, 370);
-                g.drawString(translate("game.legend.white_pin"), FIRST_HOLE_LEFT + HOLE_WIDTH * settings.cols + SMALL_HOLE_LEFT + SMALL_HOLE_WIDTH*settings.cols + SMALL_HOLE_RIGHT + 10, 400);
-                
-                
+                g.drawString(translate("game.pick_color"), FIRST_HOLE_LEFT + HOLE_WIDTH * settings.cols + SMALL_HOLE_LEFT + SMALL_HOLE_WIDTH * settings.cols + SMALL_HOLE_RIGHT + 70, 110);
+
+                g.setFont(g.getFont().deriveFont(15f));
+                g.drawString(translate("game.legend.black_pin"), FIRST_HOLE_LEFT + HOLE_WIDTH * settings.cols + SMALL_HOLE_LEFT + SMALL_HOLE_WIDTH * settings.cols + SMALL_HOLE_RIGHT + 10, 370);
+                g.drawString(translate("game.legend.white_pin"), FIRST_HOLE_LEFT + HOLE_WIDTH * settings.cols + SMALL_HOLE_LEFT + SMALL_HOLE_WIDTH * settings.cols + SMALL_HOLE_RIGHT + 10, 400);
+
                 for (int i = 0; i < settings.colors.length; i++) {
                     if (colorOutHilight == i) {
                         g.drawImage(colorOutImages[i], getColorOutX(i), getColorOutY(i), null);
@@ -200,7 +211,7 @@ public class Logik22 extends JFrame {
         JMenuItem newGameMenuItem = new JMenuItem(translate("menu_game_new"));
         JMenuItem settingsMenuItem = new JMenuItem(translate("menu_game_settings"));
         JMenuItem exitGameMenuItem = new JMenuItem(translate("menu_game_exit"));
-                
+
         newGameMenuItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -217,6 +228,7 @@ public class Logik22 extends JFrame {
                 Settings newSettings = settingsDialog.getSettings();
                 if (newSettings != null) {
                     Logik22.this.settings = newSettings;
+                    saveConfig();
                     newGame();
                 }
             }
@@ -234,7 +246,6 @@ public class Logik22 extends JFrame {
         gameMenu.add(exitGameMenuItem);
         menuBar.add(gameMenu);
 
-        
         JMenu helpMenu = new JMenu(translate("menu_help"));
         JMenuItem aboutMenuItem = new JMenuItem(translate("menu_help_about"));
         aboutMenuItem.addActionListener(new ActionListener() {
@@ -243,13 +254,10 @@ public class Logik22 extends JFrame {
                 new AboutDialog().setVisible(true);
             }
         });
-        helpMenu.add(aboutMenuItem);        
+        helpMenu.add(aboutMenuItem);
         menuBar.add(helpMenu);
 
-        
         setJMenuBar(menuBar);
-
-        
 
         MouseAdapter mouseAdapter = new MouseAdapter() {
 
@@ -374,7 +382,7 @@ public class Logik22 extends JFrame {
 
     private void newGame() {
         rowImage = dye(defaultRowImage, settings.backgroundColor);
-        
+
         colorOutImages = new Image[settings.colors.length];
         colorOutDeskImages = new Image[settings.colors.length];
         colorInImages = new Image[settings.colors.length];
@@ -419,6 +427,29 @@ public class Logik22 extends JFrame {
     private void gameOver() {
         JOptionPane.showMessageDialog(this, translate("game.lose.message"), translate("game.lose.title"), JOptionPane.ERROR_MESSAGE);
         gamePaused = true;
+    }
+
+    private void saveConfig() {
+        File configFile = getConfigFile();
+        try (FileOutputStream fos = new FileOutputStream(configFile);
+                ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+            oos.writeObject(settings);
+        }catch(Exception ex){
+            //ignore
+        }
+    }
+
+    private void loadConfig() {
+        File configFile = getConfigFile();
+        if (!configFile.exists()) {
+            return;
+        }
+        try (FileInputStream fis = new FileInputStream(configFile);
+                ObjectInputStream ois = new ObjectInputStream(fis);) {
+            settings = (Settings)ois.readObject();
+        } catch(Exception ex){
+            //ignore
+        }
     }
 
     private void evaluate() {
@@ -490,7 +521,7 @@ public class Logik22 extends JFrame {
             Logger.getLogger(SettingsDialog.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
+
     public static void centerWindow(Window f) {
         GraphicsDevice[] allDevices = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
         int topLeftX, topLeftY, screenX, screenY, windowPosX, windowPosY;
@@ -541,10 +572,98 @@ public class Logik22 extends JFrame {
         return defaultRowImage;
     }
 
-    
-    
-    public static String translate(String key){
+    public static String translate(String key) {
         ResourceBundle mybundle = ResourceBundle.getBundle(Logik22.class.getName());
         return mybundle.getString(key);
+    }
+
+    private static final File unspecifiedFile = new File("unspecified");
+
+    private static File homeDirectory = unspecifiedFile;
+
+    private enum OSId {
+        WINDOWS, OSX, UNIX
+    }
+
+    private static OSId getOSId() {
+        PrivilegedAction<String> doGetOSName = new PrivilegedAction<String>() {
+            @Override
+            public String run() {
+                return System.getProperty("os.name");
+            }
+        };
+        OSId id = OSId.UNIX;
+        String osName = AccessController.doPrivileged(doGetOSName);
+        if (osName != null) {
+            if (osName.toLowerCase().startsWith("mac os x")) {
+                id = OSId.OSX;
+            } else if (osName.contains("Windows")) {
+                id = OSId.WINDOWS;
+            }
+        }
+        return id;
+    }
+
+    public static File getConfigFile() {
+        String homeDir = getHomeDir();
+        return new File(homeDir + CONFIG_NAME);
+    }
+
+    public static String getHomeDir() {
+        if (homeDirectory == unspecifiedFile) {
+            homeDirectory = null;
+            String userHome = null;
+            try {
+                userHome = System.getProperty("user.home");
+            } catch (SecurityException ignore) {
+            }
+            if (userHome != null) {
+                String applicationId = AboutDialog.SHORT_APPLICATION_NAME;
+                OSId osId = getOSId();
+                if (osId == OSId.WINDOWS) {
+                    File appDataDir = null;
+                    try {
+                        String appDataEV = System.getenv("APPDATA");
+                        if ((appDataEV != null) && (appDataEV.length() > 0)) {
+                            appDataDir = new File(appDataEV);
+                        }
+                    } catch (SecurityException ignore) {
+                    }
+                    String vendorId = AboutDialog.VENDOR_ID;
+                    if ((appDataDir != null) && appDataDir.isDirectory()) {
+                        // ${APPDATA}\{vendorId}\${applicationId}
+                        String path = vendorId + "\\" + applicationId + "\\";
+                        homeDirectory = new File(appDataDir, path);
+                    } else {
+                        // ${userHome}\Application Data\${vendorId}\${applicationId}
+                        String path = "Application Data\\" + vendorId + "\\" + applicationId + "\\";
+                        homeDirectory = new File(userHome, path);
+                    }
+                } else if (osId == OSId.OSX) {
+                    // ${userHome}/Library/Application Support/${applicationId}
+                    String path = "Library/Application Support/" + applicationId + "/";
+                    homeDirectory = new File(userHome, path);
+                } else {
+                    // ${userHome}/.${applicationId}/
+                    String path = "." + applicationId + "/";
+                    homeDirectory = new File(userHome, path);
+                }
+            } else {
+                //no home, then use application directory
+                homeDirectory = new File(".");
+            }
+        }
+        if (!homeDirectory.exists()) {
+            if (!homeDirectory.mkdirs()) {
+                if (!homeDirectory.exists()) {
+                    homeDirectory = new File("."); //fallback to current directory
+                }
+            }
+        }
+        String ret = homeDirectory.getAbsolutePath();
+        if (!ret.endsWith(File.separator)) {
+            ret += File.separator;
+        }
+        return ret;
     }
 }

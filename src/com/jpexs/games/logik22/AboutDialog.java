@@ -16,9 +16,11 @@ import javax.swing.JPanel;
  */
 public class AboutDialog extends JDialog {
     
-    private static final String VERSION = "1.0.0";
-    private static final String AUTHOR = "JPEXS";
-    private static final String YEAR = "2022";
+    public static final String VERSION = "1.0.0";
+    public static final String AUTHOR = "JPEXS";
+    public static final String YEAR = "2022";
+    public static final String VENDOR_ID = "JPEXS";
+    public static final String SHORT_APPLICATION_NAME = "Logik22";
     
     public AboutDialog() {
         Container container = getContentPane();        
