@@ -167,6 +167,14 @@ public class Logik22 extends JFrame {
                     }
                 }
 
+                g.setFont(g.getFont().deriveFont(20f));
+                g.drawString(translate("game.pick_color"), FIRST_HOLE_LEFT + HOLE_WIDTH * settings.cols + SMALL_HOLE_LEFT + SMALL_HOLE_WIDTH*settings.cols + SMALL_HOLE_RIGHT + 70, 110);
+                
+                g.setFont(g.getFont().deriveFont(15f));                
+                g.drawString(translate("game.legend.black_pin"), FIRST_HOLE_LEFT + HOLE_WIDTH * settings.cols + SMALL_HOLE_LEFT + SMALL_HOLE_WIDTH*settings.cols + SMALL_HOLE_RIGHT + 10, 370);
+                g.drawString(translate("game.legend.white_pin"), FIRST_HOLE_LEFT + HOLE_WIDTH * settings.cols + SMALL_HOLE_LEFT + SMALL_HOLE_WIDTH*settings.cols + SMALL_HOLE_RIGHT + 10, 400);
+                
+                
                 for (int i = 0; i < settings.colors.length; i++) {
                     if (colorOutHilight == i) {
                         g.drawImage(colorOutImages[i], getColorOutX(i), getColorOutY(i), null);
@@ -291,7 +299,7 @@ public class Logik22 extends JFrame {
 
     private int getColorOutX(int i) {
         int radius = 60 + 2 * settings.colors.length;
-        int x = getRowWidth() + 80;
+        int x = getRowWidth() + 100;
         int y = 64;
 
         x += radius * Math.sin(Math.toRadians(i * 360 / settings.colors.length));
@@ -374,7 +382,7 @@ public class Logik22 extends JFrame {
         currentCol = 0;
         currentRow = 0;
 
-        contentPanel.setPreferredSize(new Dimension(getRowWidth() + 250, ROW_HEIGHT * settings.rows));
+        contentPanel.setPreferredSize(new Dimension(getRowWidth() + 280, ROW_HEIGHT * settings.rows));
         if (scrollPane != null) {
             scrollPane.revalidate();
             scrollPane.repaint();
