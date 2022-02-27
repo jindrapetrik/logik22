@@ -13,4 +13,4 @@ white = correct color on wrong position.
 Author is JPEXS
 
 ## License
-The game is licensed under GNU/GPL version 3
+The game is licensed under GNU/GPL version 3, see [LICENSE](LICENSE) for details.
