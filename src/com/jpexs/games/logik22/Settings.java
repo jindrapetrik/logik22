@@ -10,6 +10,7 @@ public class Settings {
     public int rows = 10;
     public int cols = 5;
     
+        
     public static final Color[] ALL_COLORS = new Color[]{
         Color.red,
         Color.blue,
@@ -22,6 +23,10 @@ public class Settings {
         Color.orange,
         new Color(0x99,0x00,0xff) //fuchsia
     };
+    
+    
+    public Color backgroundColor = ALL_COLORS[0];
+    
     
     public Color[] colors = new Color[]{
         ALL_COLORS[0],

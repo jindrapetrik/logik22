@@ -38,14 +38,13 @@ import javax.swing.UnsupportedLookAndFeelException;
  */
 public class Logik22 extends JFrame {
 
+    private BufferedImage defaultRowImage;
     private BufferedImage rowImage;
     private BufferedImage colorOutImage;
     private BufferedImage colorInImage;
     private BufferedImage colorOutDeskImage;
     private BufferedImage exactMatchImage;
     private BufferedImage inexactMatchImage;
-
-    private final Color BACKGROUND_COLOR = new Color(0xff, 0, 0);
 
     private static Image colorOutImages[];
     private static Image colorInImages[];
@@ -79,15 +78,15 @@ public class Logik22 extends JFrame {
 
     private final boolean DEBUG_SHOW_SECRET = false;
 
-    private final int HOLE_WIDTH = 30;
+    public static  final int HOLE_WIDTH = 30;
 
-    private final int FIRST_HOLE_LEFT = 30;
+    public static final int FIRST_HOLE_LEFT = 30;
 
-    private final int SMALL_HOLE_WIDTH = 15;
+    public static  final int SMALL_HOLE_WIDTH = 15;
 
-    private final int SMALL_HOLE_LEFT = 12;
+    public static  final int SMALL_HOLE_LEFT = 12;
 
-    private final int SMALL_HOLE_RIGHT = 32;
+    public static  final int SMALL_HOLE_RIGHT = 32;
 
     private final int MATCHES_LEFT = 3;
 
@@ -101,7 +100,7 @@ public class Logik22 extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
         try {
-            rowImage = ImageIO.read(getClass().getResource(RESOURCE_PATH + "/row.png"));
+            defaultRowImage = ImageIO.read(getClass().getResource(RESOURCE_PATH + "/row.png"));
             colorInImage = ImageIO.read(getClass().getResource(RESOURCE_PATH + "/colorin.png"));
             colorOutImage = ImageIO.read(getClass().getResource(RESOURCE_PATH + "/colorout.png"));
             colorOutDeskImage = ImageIO.read(getClass().getResource(RESOURCE_PATH + "/coloroutdesk.png"));
@@ -250,7 +249,7 @@ public class Logik22 extends JFrame {
         
         setJMenuBar(menuBar);
 
-        rowImage = dye(rowImage, BACKGROUND_COLOR);
+        
 
         MouseAdapter mouseAdapter = new MouseAdapter() {
 
@@ -374,6 +373,8 @@ public class Logik22 extends JFrame {
     }
 
     private void newGame() {
+        rowImage = dye(defaultRowImage, settings.backgroundColor);
+        
         colorOutImages = new Image[settings.colors.length];
         colorOutDeskImages = new Image[settings.colors.length];
         colorInImages = new Image[settings.colors.length];
@@ -536,6 +537,11 @@ public class Logik22 extends JFrame {
         return colorOutDeskImage;
     }
 
+    public BufferedImage getDefaultRowImage() {
+        return defaultRowImage;
+    }
+
+    
     
     public static String translate(String key){
         ResourceBundle mybundle = ResourceBundle.getBundle(Logik22.class.getName());

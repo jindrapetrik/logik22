@@ -14,3 +14,6 @@ Author is JPEXS
 
 ## License
 The game is licensed under GNU/GPL version 3, see [LICENSE](LICENSE) for details.
+
+## Changelog
+All changes between version are documented in the file [CHANGELOG.md](CHANGELOG.md)
