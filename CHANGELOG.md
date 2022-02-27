@@ -1,7 +1,7 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.1.0] - 2022-02-27
 - Background color selection
 - Settings are saved to the config file
 
