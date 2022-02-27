@@ -19,6 +19,8 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.Random;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -199,7 +201,7 @@ public class Logik22 extends JFrame {
         JMenuItem newGameMenuItem = new JMenuItem(translate("menu_game_new"));
         JMenuItem settingsMenuItem = new JMenuItem(translate("menu_game_settings"));
         JMenuItem exitGameMenuItem = new JMenuItem(translate("menu_game_exit"));
-
+                
         newGameMenuItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -233,6 +235,19 @@ public class Logik22 extends JFrame {
         gameMenu.add(exitGameMenuItem);
         menuBar.add(gameMenu);
 
+        
+        JMenu helpMenu = new JMenu(translate("menu_help"));
+        JMenuItem aboutMenuItem = new JMenuItem(translate("menu_help_about"));
+        aboutMenuItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new AboutDialog().setVisible(true);
+            }
+        });
+        helpMenu.add(aboutMenuItem);        
+        menuBar.add(helpMenu);
+
+        
         setJMenuBar(menuBar);
 
         rowImage = dye(rowImage, BACKGROUND_COLOR);
@@ -467,6 +482,14 @@ public class Logik22 extends JFrame {
         centerWindow(INSTANCE);
     }
 
+    public static void setWindowIcon(Window f) {
+        try {
+            f.setIconImage(ImageIO.read(Logik22.class.getResource(RESOURCE_PATH + "/icon.png")));
+        } catch (IOException ex) {
+            Logger.getLogger(SettingsDialog.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
     public static void centerWindow(Window f) {
         GraphicsDevice[] allDevices = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
         int topLeftX, topLeftY, screenX, screenY, windowPosX, windowPosY;

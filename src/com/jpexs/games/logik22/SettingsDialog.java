@@ -43,12 +43,7 @@ public class SettingsDialog extends JDialog {
     private int hilightedColor = -1;
 
     public SettingsDialog(Settings settings) {
-        setDefaultCloseOperation(HIDE_ON_CLOSE);
-        try {
-            setIconImage(ImageIO.read(getClass().getResource(Logik22.RESOURCE_PATH + "/icon.png")));
-        } catch (IOException ex) {
-            Logger.getLogger(SettingsDialog.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        setDefaultCloseOperation(HIDE_ON_CLOSE);        
         Container container = getContentPane();
         container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
 
@@ -198,6 +193,7 @@ public class SettingsDialog extends JDialog {
         pack();
         setTitle(Logik22.translate("settings.title"));
         Logik22.centerWindow(this);
+        Logik22.setWindowIcon(this);
     }
 
     public Settings getSettings() {
