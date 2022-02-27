@@ -63,7 +63,7 @@ public class Logik22 extends JFrame {
     private int currentCol = 0;
     private int currentRow = 0;
 
-    private final String RESOURCE_PATH = "/com/jpexs/games/logik22/graphics";
+    public static final String RESOURCE_PATH = "/com/jpexs/games/logik22/graphics";
 
     private int[] secretColors;
 
@@ -106,6 +106,8 @@ public class Logik22 extends JFrame {
             exactMatchImage = ImageIO.read(getClass().getResource(RESOURCE_PATH + "/black.png"));
             inexactMatchImage = ImageIO.read(getClass().getResource(RESOURCE_PATH + "/white.png"));
 
+            setIconImage(ImageIO.read(getClass().getResource(RESOURCE_PATH + "/icon.png")));
+            
         } catch (IOException ex) {
             System.err.println("Cannot load image from resources");
             System.exit(1);
@@ -253,6 +255,9 @@ public class Logik22 extends JFrame {
                         if (newCol == settings.cols) {
                             newCol = 0;
                             evaluate();
+                            if (gamePaused) { //won
+                                return;
+                            }
                             newRow++;
                             if (newRow == settings.rows) {
                                 newRow = 0;
