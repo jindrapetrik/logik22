@@ -11,6 +11,10 @@ public class Settings implements Serializable {
     public int rows = 10;
     public int cols = 5;
     
+    public static int DEFAULT_SETTINGS_VERSION = 3;
+    
+    public int settingsVersion = DEFAULT_SETTINGS_VERSION;
+    
         
     public static final Color[] ALL_COLORS = new Color[]{
         Color.red,

@@ -1,6 +1,8 @@
 package com.jpexs.games.logik22;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -16,7 +18,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -30,13 +31,16 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
+import javax.swing.BoxLayout;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
@@ -49,12 +53,19 @@ public class Logik22 extends JFrame {
     private static final String CONFIG_NAME = "config.bin";
 
     private BufferedImage defaultRowImage;
+    private BufferedImage defaultSelectionImage;
     private BufferedImage rowImage;
     private BufferedImage colorOutImage;
     private BufferedImage colorInImage;
     private BufferedImage colorOutDeskImage;
     private BufferedImage exactMatchImage;
     private BufferedImage inexactMatchImage;
+    private BufferedImage selectionImage;
+    private BufferedImage enterImage;
+    private BufferedImage enterSmallImage;
+    private BufferedImage enterHilightedImage;
+    private BufferedImage emptyImage;
+    private BufferedImage emptyHilightedImage;
 
     private static Image colorOutImages[];
     private static Image colorInImages[];
@@ -106,9 +117,15 @@ public class Logik22 extends JFrame {
 
     private JScrollPane scrollPane;
 
+    private boolean enterClicked = false;
+    private boolean enterHilighted = false;
+    private boolean emptyHilighted = false;
+
+    private JLabel statusLabel;
+
     public Logik22() {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        
+
         loadConfig();
 
         try {
@@ -118,7 +135,13 @@ public class Logik22 extends JFrame {
             colorOutDeskImage = ImageIO.read(getClass().getResource(RESOURCE_PATH + "/coloroutdesk.png"));
             exactMatchImage = ImageIO.read(getClass().getResource(RESOURCE_PATH + "/black.png"));
             inexactMatchImage = ImageIO.read(getClass().getResource(RESOURCE_PATH + "/white.png"));
+            defaultSelectionImage = ImageIO.read(getClass().getResource(RESOURCE_PATH + "/selection.png"));
+            enterImage = ImageIO.read(getClass().getResource(RESOURCE_PATH + "/enter.png"));
+            enterSmallImage = ImageIO.read(getClass().getResource(RESOURCE_PATH + "/entersmall.png"));
+            enterHilightedImage = ImageIO.read(getClass().getResource(RESOURCE_PATH + "/enterhilight.png"));
 
+            emptyImage = ImageIO.read(getClass().getResource(RESOURCE_PATH + "/empty.png"));
+            emptyHilightedImage = ImageIO.read(getClass().getResource(RESOURCE_PATH + "/emptyhilight.png"));
             setIconImage(ImageIO.read(getClass().getResource(RESOURCE_PATH + "/icon.png")));
 
         } catch (IOException ex) {
@@ -186,8 +209,12 @@ public class Logik22 extends JFrame {
                 g.drawString(translate("game.pick_color"), FIRST_HOLE_LEFT + HOLE_WIDTH * settings.cols + SMALL_HOLE_LEFT + SMALL_HOLE_WIDTH * settings.cols + SMALL_HOLE_RIGHT + 70, 110);
 
                 g.setFont(g.getFont().deriveFont(15f));
-                g.drawString(translate("game.legend.black_pin"), FIRST_HOLE_LEFT + HOLE_WIDTH * settings.cols + SMALL_HOLE_LEFT + SMALL_HOLE_WIDTH * settings.cols + SMALL_HOLE_RIGHT + 10, 370);
-                g.drawString(translate("game.legend.white_pin"), FIRST_HOLE_LEFT + HOLE_WIDTH * settings.cols + SMALL_HOLE_LEFT + SMALL_HOLE_WIDTH * settings.cols + SMALL_HOLE_RIGHT + 10, 400);
+                g.drawString(translate("game.legend.black_pin"), FIRST_HOLE_LEFT + HOLE_WIDTH * settings.cols + SMALL_HOLE_LEFT + SMALL_HOLE_WIDTH * settings.cols + SMALL_HOLE_RIGHT + 30, 370);
+                g.drawString(translate("game.legend.white_pin"), FIRST_HOLE_LEFT + HOLE_WIDTH * settings.cols + SMALL_HOLE_LEFT + SMALL_HOLE_WIDTH * settings.cols + SMALL_HOLE_RIGHT + 30, 400);
+
+                if (!gamePaused) {
+                    g.drawImage(selectionImage, FIRST_HOLE_LEFT + currentCol * HOLE_WIDTH - 5, rowImage.getHeight() * currentRow + 8, null);
+                }
 
                 for (int i = 0; i < settings.colors.length; i++) {
                     if (colorOutHilight == i) {
@@ -195,6 +222,22 @@ public class Logik22 extends JFrame {
                     } else {
                         g.drawImage(colorOutDeskImages[i], getColorOutX(i), getColorOutY(i), null);
                     }
+                }
+
+                final int enterLeft = getRowWidth() + 270;
+
+                if (enterClicked) {
+                    g.drawImage(enterSmallImage, enterLeft + 10, 205, null);
+                } else if (enterHilighted) {
+                    g.drawImage(enterHilightedImage, enterLeft, 200, null);
+                } else {
+                    g.drawImage(enterImage, enterLeft, 200, null);
+                }
+
+                if (emptyHilighted) {
+                    g.drawImage(emptyHilightedImage, getRowWidth()+95, 200, null);
+                } else {
+                    g.drawImage(emptyImage, getRowWidth() + 100, 205, null);
                 }
 
                 if (DEBUG_SHOW_SECRET) {
@@ -261,33 +304,58 @@ public class Logik22 extends JFrame {
 
         MouseAdapter mouseAdapter = new MouseAdapter() {
 
+            private int hilightFieldColumn = -1;
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.getButton() == MouseEvent.BUTTON1) {
+                    if (enterClicked) {
+                        enterClicked = false;
+                        contentPanel.repaint();
+                        finishRow();
+                    }
+                }
+            }
+
             @Override
             public void mousePressed(MouseEvent e) {
                 if (gamePaused) {
                     return;
                 }
                 if (e.getButton() == MouseEvent.BUTTON1) {
+
+                    if (enterHilighted) {
+                        enterClicked = true;
+                        contentPanel.repaint();
+                    }
+                    if (hilightFieldColumn != -1) {
+                        currentCol = hilightFieldColumn;
+                        contentPanel.repaint();
+                    }
                     int selectedColor = colorOutHilight;
-                    if (selectedColor != NO_COLOR) {
+                    if (selectedColor != NO_COLOR || emptyHilighted) {
                         selectedColors[currentRow][currentCol] = selectedColor;
                         contentPanel.repaint();
 
                         int newCol = currentCol + 1;
-                        int newRow = currentRow;
+                        while (newCol < settings.cols && selectedColors[currentRow][newCol] != NO_COLOR) {
+                            newCol++;
+                        }
                         if (newCol == settings.cols) {
                             newCol = 0;
-                            evaluate();
-                            if (gamePaused) { //won
-                                return;
+                            boolean processNewRow = true;
+                            for (int x = 0; x < settings.cols; x++) {
+                                if (selectedColors[currentRow][x] == NO_COLOR) {
+                                    newCol = x;
+                                    processNewRow = false;
+                                    break;
+                                }
                             }
-                            newRow++;
-                            if (newRow == settings.rows) {
-                                newRow = 0;
-                                gameOver();
+                            if (processNewRow) {
+                                finishRow();
                             }
                         }
                         currentCol = newCol;
-                        currentRow = newRow;
 
                     }
                 }
@@ -295,6 +363,64 @@ public class Logik22 extends JFrame {
 
             @Override
             public void mouseMoved(MouseEvent e) {
+
+                if (!gamePaused) {
+                    for (int x = 0; x < settings.cols; x++) {
+                        Rectangle fieldRect = new Rectangle(FIRST_HOLE_LEFT + HOLE_WIDTH * x, ROW_HEIGHT * currentRow + 10, HOLE_WIDTH, ROW_HEIGHT - 15);
+                        if (fieldRect.contains(e.getPoint())) {
+                            setStatus(translate("hint.selectfield"));
+                            contentPanel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                            hilightFieldColumn = x;
+                            return;
+                        }
+                    }
+                    hilightFieldColumn = -1;
+                }
+
+                if (!gamePaused) {
+                    Rectangle enterRect = new Rectangle(getRowWidth() + 270, 200, enterImage.getWidth(), enterImage.getHeight());
+                    enterHilighted = enterRect.contains(e.getPoint());
+                    if (enterHilighted) {
+                        setStatus(translate("hint.enter"));
+                        emptyHilighted = false;
+                        colorOutHilight = NO_COLOR;
+                        contentPanel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                        contentPanel.repaint();
+                        return;
+                    }
+                }
+               
+                if (!gamePaused) {
+                    Rectangle emptyRect = new Rectangle(getRowWidth()+100, 205, emptyImage.getWidth(), emptyImage.getHeight());
+                    emptyHilighted = emptyRect.contains(e.getPoint());
+
+                    if (emptyHilighted) {
+                        setStatus(translate("hint.empty"));
+                        colorOutHilight = NO_COLOR;
+                        contentPanel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                        contentPanel.repaint();
+                        return;
+                    }
+                }
+                
+                if (!gamePaused) {
+                    loopx:for (int x=0; x< settings.cols;x++){
+                        for(int y=0;y<currentRow;y++){
+                            Rectangle pinRect = new Rectangle(FIRST_HOLE_LEFT + settings.cols * HOLE_WIDTH + SMALL_HOLE_LEFT + x * SMALL_HOLE_WIDTH,
+                            y * ROW_HEIGHT, SMALL_HOLE_WIDTH, ROW_HEIGHT);
+                            if (pinRect.contains(e.getPoint())){
+                                if (matches[y][x] == EXACT_MATCH){
+                                    setStatus(translate("hint.black"));
+                                    return;
+                                }else if (matches[y][x] == INEXACT_MATCH){
+                                    setStatus(translate("hint.white"));
+                                    return;
+                                }                                                                      
+                            }
+                        }
+                    }
+                }
+
                 int newHilight = NO_COLOR;
 
                 if (!gamePaused) {
@@ -308,8 +434,12 @@ public class Logik22 extends JFrame {
                 }
                 if (newHilight == NO_COLOR) {
                     contentPanel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                    if (!gamePaused) {
+                        noStatus();
+                    }
                 } else {
                     contentPanel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                    setStatus(translate("hint.selectcolor"));
                 }
                 colorOutHilight = newHilight;
                 contentPanel.repaint();
@@ -318,14 +448,52 @@ public class Logik22 extends JFrame {
         contentPanel.addMouseMotionListener(mouseAdapter);
         contentPanel.addMouseListener(mouseAdapter);
         scrollPane = new JScrollPane(contentPanel);
-        getContentPane().add(scrollPane);
+        Container container = getContentPane();
+        container.setLayout(new BorderLayout());
+        container.add(scrollPane, BorderLayout.CENTER);
+
+        JPanel statusPanel = new JPanel();
+        statusPanel.setPreferredSize(new Dimension(getWidth(), 16));
+        statusPanel.setLayout(new BoxLayout(statusPanel, BoxLayout.X_AXIS));
+        statusLabel = new JLabel();
+        statusLabel.setHorizontalAlignment(SwingConstants.LEFT);
+        statusPanel.add(statusLabel);
+        container.add(statusPanel, BorderLayout.SOUTH);
+
         pack();
         //setResizable(false);        
         setTitle(translate("title"));
     }
 
+    private void setStatus(String status) {
+        if (statusLabel != null) {
+            statusLabel.setText(status);
+        }
+    }
+
+    private void noStatus() {
+        setStatus(" ");
+    }
+
+    private void finishRow() {
+        int newRow = currentRow;
+        evaluate();
+        if (gamePaused) { //won
+            return;
+        }
+        newRow++;
+        if (newRow == settings.rows) {
+            newRow = 0;
+            pauseGame();
+            contentPanel.repaint();
+            gameOver();
+        }
+        currentRow = newRow;
+        currentCol = 0;
+    }
+
     private int getColorOutX(int i) {
-        int radius = 60 + 2 * settings.colors.length;
+        int radius = 70 + 2 * settings.colors.length;
         int x = getRowWidth() + 100;
         int y = 64;
 
@@ -334,16 +502,16 @@ public class Logik22 extends JFrame {
         return x;
     }
 
-    private int getRowWidth() {
-        return FIRST_HOLE_LEFT + HOLE_WIDTH * settings.cols + SMALL_HOLE_LEFT + SMALL_HOLE_WIDTH * settings.cols + SMALL_HOLE_RIGHT;
-    }
-
     private int getColorOutY(int i) {
         int y = 200;
-        int radius = 60 + 2 * settings.colors.length;
+        int radius = 70 + 2 * settings.colors.length;
 
         y += radius * Math.cos(Math.toRadians(i * 360 / settings.colors.length));
         return y;
+    }
+
+    private int getRowWidth() {
+        return FIRST_HOLE_LEFT + HOLE_WIDTH * settings.cols + SMALL_HOLE_LEFT + SMALL_HOLE_WIDTH * settings.cols + SMALL_HOLE_RIGHT;
     }
 
     public static BufferedImage dye(BufferedImage image, Color color) {
@@ -381,7 +549,9 @@ public class Logik22 extends JFrame {
     }
 
     private void newGame() {
+        noStatus();
         rowImage = dye(defaultRowImage, settings.backgroundColor);
+        selectionImage = dye(defaultSelectionImage, settings.backgroundColor);
 
         colorOutImages = new Image[settings.colors.length];
         colorOutDeskImages = new Image[settings.colors.length];
@@ -411,7 +581,7 @@ public class Logik22 extends JFrame {
         currentCol = 0;
         currentRow = 0;
 
-        contentPanel.setPreferredSize(new Dimension(getRowWidth() + 280, ROW_HEIGHT * settings.rows));
+        contentPanel.setPreferredSize(new Dimension(getRowWidth() + 350, ROW_HEIGHT * settings.rows));
         if (scrollPane != null) {
             scrollPane.revalidate();
             scrollPane.repaint();
@@ -420,13 +590,13 @@ public class Logik22 extends JFrame {
     }
 
     private void winGame() {
-        JOptionPane.showMessageDialog(this, translate("game.win.message"), translate("game.win.title"), JOptionPane.INFORMATION_MESSAGE);
-        gamePaused = true;
+        setStatus(translate("hint.win"));
+        JOptionPane.showMessageDialog(this, translate("game.win.message"), translate("game.win.title"), JOptionPane.INFORMATION_MESSAGE);        
     }
 
     private void gameOver() {
-        JOptionPane.showMessageDialog(this, translate("game.lose.message"), translate("game.lose.title"), JOptionPane.ERROR_MESSAGE);
-        gamePaused = true;
+        setStatus(translate("hint.lose"));
+        JOptionPane.showMessageDialog(this, translate("game.lose.message"), translate("game.lose.title"), JOptionPane.ERROR_MESSAGE);        
     }
 
     private void saveConfig() {
@@ -434,7 +604,7 @@ public class Logik22 extends JFrame {
         try (FileOutputStream fos = new FileOutputStream(configFile);
                 ObjectOutputStream oos = new ObjectOutputStream(fos)) {
             oos.writeObject(settings);
-        }catch(Exception ex){
+        } catch (Exception ex) {
             //ignore
         }
     }
@@ -446,8 +616,11 @@ public class Logik22 extends JFrame {
         }
         try (FileInputStream fis = new FileInputStream(configFile);
                 ObjectInputStream ois = new ObjectInputStream(fis);) {
-            settings = (Settings)ois.readObject();
-        } catch(Exception ex){
+            Settings newSettings = (Settings) ois.readObject();
+            if (newSettings.settingsVersion == Settings.DEFAULT_SETTINGS_VERSION) {
+                settings = newSettings;
+            }
+        } catch (Exception ex) {
             //ignore
         }
     }
@@ -492,9 +665,17 @@ public class Logik22 extends JFrame {
         }
 
         if (numExact == settings.cols) {
+            pauseGame();
             contentPanel.repaint();
             winGame();
         }
+    }
+
+    private void pauseGame() {
+        enterHilighted = false;
+        enterClicked = false;
+        emptyHilighted = false;
+        gamePaused = true;
     }
 
     /**
