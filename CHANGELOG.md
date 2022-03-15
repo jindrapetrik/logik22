@@ -1,6 +1,9 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## [2.0.1] - 2022-03-15
+- Recompiled for Java 8
+
 ## [2.0.0] - 2022-03-02
 - Current field selection (with crosshair)
 - Enter button for processing to next row without remaining colors selection
